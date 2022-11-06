@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:simple_khata/add_user_dialog.dart';
+import 'package:simple_khata/main.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key, required this.title}) : super(key: key);
@@ -61,13 +63,15 @@ class SumContainer extends StatelessWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
+    final state = Provider.of<GlobalState>(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
         actions: [
           IconButton(
               onPressed: () {
-                Navigator.of(context).pushNamed('/login');
+                state.logout();
+                Navigator.of(context).pushReplacementNamed('/login');
               },
               icon: const Icon(Icons.logout))
         ],
@@ -85,12 +89,12 @@ class _MyHomePageState extends State<MyHomePage> {
                         flex: 1,
                         child: SumContainer(
                           type: 'lended',
-                          totalSum: 1220,
+                          totalSum: 0,
                         )),
                     SizedBox(width: 8),
                     Expanded(
                         flex: 1,
-                        child: SumContainer(type: 'borrowed', totalSum: 1220))
+                        child: SumContainer(type: 'borrowed', totalSum: 200))
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -103,19 +107,32 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                ListTile(
-                  leading: const Icon(Icons.person),
-                  title: TextButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/user-khata');
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: state.user?['users'].length ?? 0,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        leading: const Icon(Icons.person),
+                        title: TextButton(
+                          onPressed: () {
+                            state.setCurrentKhataUser(
+                                state.user?['users'][index]);
+                            Navigator.pushNamed(context, '/user-khata');
+                          },
+                          child: Text(
+                            state.user?['users']?[index]?['fullName'] ??
+                                'No name',
+                            textAlign: TextAlign.start,
+                            textWidthBasis: TextWidthBasis.parent,
+                          ),
+                        ),
+                        trailing: Text(state
+                            .getTotalAmmountOfUser(
+                                state.user?['users']?[index]?['email'])
+                            .toString()),
+                      );
                     },
-                    child: const Text(
-                      'Person',
-                      textAlign: TextAlign.start,
-                      textWidthBasis: TextWidthBasis.parent,
-                    ),
                   ),
-                  trailing: const Text('Rs 300'),
                 ),
               ],
             ),
@@ -125,7 +142,9 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           showDialog(
-              context: context, builder: (context) => const AddUserDialog());
+                  context: context, builder: (context) => const AddUserDialog())
+              // data is refetched on rebuilding of widget
+              .then((value) => setState(() => {}));
         },
         tooltip: 'Increment',
         child: const Icon(Icons.person_add),

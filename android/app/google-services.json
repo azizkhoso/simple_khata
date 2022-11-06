@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "515485543684",
+    "project_id": "simple-khata",
+    "storage_bucket": "simple-khata.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:515485543684:android:60f92457aa079de66cb451",
+        "android_client_info": {
+          "package_name": "com.example.simple_khata"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "515485543684-db9qfia58eufsrl47shvrkf57s3p9iu2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCsMHx0MpFiAFOFNoyssEh6Fg_iR_oze5M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "515485543684-db9qfia58eufsrl47shvrkf57s3p9iu2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

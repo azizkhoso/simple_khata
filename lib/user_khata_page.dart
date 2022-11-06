@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:simple_khata/main.dart';
 
 class UserKhata extends StatefulWidget {
-  const UserKhata({Key? key}) : super(key: key);
+  final Map<String, dynamic> user;
+  const UserKhata({Key? key, required this.user}) : super(key: key);
 
   @override
   State<UserKhata> createState() => _UserKhataState();
@@ -86,9 +89,12 @@ class _UserKhataState extends State<UserKhata> {
 
   @override
   Widget build(BuildContext context) {
+    final state = Provider.of<GlobalState>(context);
+    final currentUserRecs = state.getRecordsOfUser(widget.user['email']);
+    final totalSum = state.getTotalAmmountOfUser(widget.user['email']);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Abdul Aziz Khoso'),
+        title: Text(widget.user['fullName']),
       ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
@@ -112,7 +118,7 @@ class _UserKhataState extends State<UserKhata> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              'Rs 1220',
+                              'Rs ${totalSum.abs()}',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: isLending(totalSum)
@@ -167,7 +173,7 @@ class _UserKhataState extends State<UserKhata> {
                 ),
                 Expanded(
                   child: ListView.builder(
-                    itemCount: 20,
+                    itemCount: currentUserRecs.length,
                     itemBuilder: (context, index) => Expanded(
                       child: Container(
                         padding: const EdgeInsets.all(6.0),
@@ -180,25 +186,33 @@ class _UserKhataState extends State<UserKhata> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Date'),
+                                  Text(currentUserRecs[index]['dateFormatted']
+                                      .toString()),
                                   const Text('Breakfast'),
                                   Text(
-                                    'Bal. Rs 604',
+                                    currentUserRecs[index]['prevAmount']
+                                        .toString(),
                                     style: TextStyle(
-                                        backgroundColor: isLending(totalSum)
+                                        backgroundColor: isLending(
+                                                currentUserRecs[index]
+                                                    ['prevAmount'])
                                             ? Colors.green[200]
                                             : Colors.red[200]),
                                   )
                                 ],
                               ),
                             ),
-                            const Expanded(
+                            Expanded(
                               flex: 1,
-                              child: Text('Date'),
+                              child: Text(isLending(totalSum)
+                                  ? totalSum.toString()
+                                  : ''),
                             ),
-                            const Expanded(
+                            Expanded(
                               flex: 1,
-                              child: Text('Date'),
+                              child: Text(!isLending(totalSum)
+                                  ? totalSum.abs().toString()
+                                  : ''),
                             )
                           ],
                         ),
