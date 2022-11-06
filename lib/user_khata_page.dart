@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:simple_khata/main.dart';
 
@@ -11,14 +12,12 @@ class UserKhata extends StatefulWidget {
 }
 
 class _UserKhataState extends State<UserKhata> {
-  final totalSum = 15;
-
-  isLending(sum) => sum > 0;
+  isLending(sum) => sum <= 0;
 
   final amountController = TextEditingController();
   final descriptionController = TextEditingController();
 
-  openDialog(BuildContext context, String type) async {
+  openDialog(BuildContext context, String type, var action) async {
     showDialog(
         barrierDismissible: false,
         context: context,
@@ -35,6 +34,10 @@ class _UserKhataState extends State<UserKhata> {
                     const SizedBox(height: 8),
                     TextField(
                       controller: amountController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: <TextInputFormatter>[
+                        FilteringTextInputFormatter.digitsOnly
+                      ],
                       decoration: const InputDecoration(
                           label: Text('Amount'),
                           prefixIcon: Icon(Icons.money_rounded),
@@ -61,6 +64,10 @@ class _UserKhataState extends State<UserKhata> {
                           amountController.clear();
                           descriptionController.clear();
                           Navigator.of(context).pop();
+                          action(
+                              widget.user['email'],
+                              int.parse(amountController.text),
+                              descriptionController.text);
                         },
                         child: const Text(
                           'Cancel',
@@ -73,6 +80,10 @@ class _UserKhataState extends State<UserKhata> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
+                            action(
+                                widget.user['email'],
+                                int.parse(amountController.text),
+                                descriptionController.text);
                             amountController.clear();
                             descriptionController.clear();
                             Navigator.of(context).pop();
@@ -174,50 +185,58 @@ class _UserKhataState extends State<UserKhata> {
                 Expanded(
                   child: ListView.builder(
                     itemCount: currentUserRecs.length,
-                    itemBuilder: (context, index) => Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(6.0),
-                        decoration: const BoxDecoration(
-                            border: Border(bottom: BorderSide(width: 0.5))),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(currentUserRecs[index]['dateFormatted']
-                                      .toString()),
-                                  const Text('Breakfast'),
-                                  Text(
-                                    currentUserRecs[index]['prevAmount']
-                                        .toString(),
-                                    style: TextStyle(
-                                        backgroundColor: isLending(
-                                                currentUserRecs[index]
-                                                    ['prevAmount'])
-                                            ? Colors.green[200]
-                                            : Colors.red[200]),
-                                  )
-                                ],
+                    itemBuilder: (context, index) {
+                      final currentRec = currentUserRecs[index];
+                      final currentUserEmailIndex =
+                          currentRec['users'].indexOf(widget.user['email']);
+                      final currentUserAmount =
+                          currentRec['amounts'][currentUserEmailIndex];
+                      return Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(6.0),
+                          decoration: const BoxDecoration(
+                              border: Border(bottom: BorderSide(width: 0.5))),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(currentUserRecs[index]['dateFormatted']
+                                        .toString()),
+                                    Text(currentRec['description']),
+                                    Text(
+                                      currentUserRecs[index]['prevAmount']
+                                          .abs()
+                                          .toString(),
+                                      style: TextStyle(
+                                          backgroundColor: isLending(
+                                                  currentUserRecs[index]
+                                                      ['prevAmount'])
+                                              ? Colors.green[200]
+                                              : Colors.red[200]),
+                                    )
+                                  ],
+                                ),
                               ),
-                            ),
-                            Expanded(
-                              flex: 1,
-                              child: Text(isLending(totalSum)
-                                  ? totalSum.toString()
-                                  : ''),
-                            ),
-                            Expanded(
-                              flex: 1,
-                              child: Text(!isLending(totalSum)
-                                  ? totalSum.abs().toString()
-                                  : ''),
-                            )
-                          ],
+                              Expanded(
+                                flex: 1,
+                                child: Text(isLending(currentUserAmount)
+                                    ? currentUserAmount.abs().toString()
+                                    : ''),
+                              ),
+                              Expanded(
+                                flex: 1,
+                                child: Text(!isLending(currentUserAmount)
+                                    ? currentUserAmount.abs().toString()
+                                    : ''),
+                              )
+                            ],
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -225,7 +244,14 @@ class _UserKhataState extends State<UserKhata> {
                   children: [
                     Expanded(
                         child: ElevatedButton(
-                      onPressed: () => openDialog(context, 'Lending'),
+                      onPressed: () => openDialog(context, 'Lending',
+                          (email, amount, description) {
+                        debugPrint('Amount is ${amount.runtimeType}');
+                        state.lendSumToUser(
+                            email: email,
+                            amount: amount,
+                            description: description);
+                      }),
                       style: ButtonStyle(
                         backgroundColor:
                             MaterialStateProperty.all(Colors.green[100]),
@@ -249,7 +275,13 @@ class _UserKhataState extends State<UserKhata> {
                     const SizedBox(width: 8),
                     Expanded(
                         child: ElevatedButton(
-                      onPressed: () => openDialog(context, 'Borrowing'),
+                      onPressed: () => openDialog(
+                          context,
+                          'Borrowing',
+                          (email, amount, description) => state.borrowFromUser(
+                              email: email,
+                              amount: amount,
+                              description: description)),
                       style: ButtonStyle(
                         backgroundColor:
                             MaterialStateProperty.all(Colors.red[100]),

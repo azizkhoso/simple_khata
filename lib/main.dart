@@ -59,6 +59,32 @@ class GlobalState extends ChangeNotifier {
     });
   }
 
+  lendSumToUser(
+      {required String email,
+      required int amount,
+      required String description}) {
+    final firestore = FirebaseFirestore.instance;
+    firestore.collection('records').add({
+      "users": [user?['email'], email],
+      "amounts": [amount, -1 * amount],
+      "description": description,
+      "date": Timestamp.now(),
+    }).then((value) => {fetchRecords()});
+  }
+
+  borrowFromUser(
+      {required String email,
+      required int amount,
+      required String description}) {
+    final firestore = FirebaseFirestore.instance;
+    firestore.collection('records').add({
+      "users": [user?['email'], email],
+      "amounts": [-1 * amount, amount],
+      "description": description,
+      "date": Timestamp.now(),
+    }).then((value) => {fetchRecords()});
+  }
+
   List<Map<String, dynamic>> getRecordsOfUser(String email) {
     final List<Map<String, dynamic>> records = [];
     try {
@@ -68,6 +94,7 @@ class GlobalState extends ChangeNotifier {
         List users = rec['users'];
         Timestamp date = rec['date'];
         if (users.contains(email)) {
+          debugPrint('$users contain $email');
           int indexOfEmail = users.indexOf(email);
           int amount = rec['amounts'][indexOfEmail];
           if (index != 0) {
@@ -77,14 +104,14 @@ class GlobalState extends ChangeNotifier {
           final d = date.toDate();
           rec['dateFormatted'] =
               '${d.hour}:${d.minute}, ${d.day}-${d.month}-${d.year}';
+          records.add(rec);
+          index++;
         }
-        records.add(rec);
-        index++;
       }
     } catch (e) {
       debugPrint('error in getRecords of user $e');
     }
-    return records;
+    return records.reversed.toList();
   }
 
   int getTotalAmmountOfUser(String email) {
@@ -102,6 +129,26 @@ class GlobalState extends ChangeNotifier {
       debugPrint('error in amount of user $e');
       return 0;
     }
+  }
+
+  int getTotalLendedSum() {
+    int totalSum = 0;
+    if (user == null) return 0;
+    for (var elem in user?['users']) {
+      var sum = getTotalAmmountOfUser(elem['email']);
+      totalSum += sum < 0 ? sum : 0;
+    }
+    return totalSum;
+  }
+
+  int getTotalBorrowedSum() {
+    int totalSum = 0;
+    if (user == null) return 0;
+    for (var elem in user?['users']) {
+      var sum = getTotalAmmountOfUser(elem['email']);
+      totalSum += sum > 0 ? sum : 0;
+    }
+    return totalSum;
   }
 }
 

@@ -64,6 +64,8 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     final state = Provider.of<GlobalState>(context);
+    int totalLendedSum = state.getTotalLendedSum();
+    int totalBorrowedSum = state.getTotalBorrowedSum();
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -84,17 +86,18 @@ class _MyHomePageState extends State<MyHomePage> {
             child: Column(
               children: <Widget>[
                 Row(
-                  children: const [
+                  children: [
                     Expanded(
                         flex: 1,
                         child: SumContainer(
                           type: 'lended',
-                          totalSum: 0,
+                          totalSum: totalLendedSum.abs(),
                         )),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Expanded(
                         flex: 1,
-                        child: SumContainer(type: 'borrowed', totalSum: 200))
+                        child: SumContainer(
+                            type: 'borrowed', totalSum: totalBorrowedSum.abs()))
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -111,25 +114,29 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: ListView.builder(
                     itemCount: state.user?['users'].length ?? 0,
                     itemBuilder: (context, index) {
+                      final user = state.user?['users'][index];
+                      final int userAmount =
+                          state.getTotalAmmountOfUser(user?['email']);
                       return ListTile(
                         leading: const Icon(Icons.person),
                         title: TextButton(
                           onPressed: () {
-                            state.setCurrentKhataUser(
-                                state.user?['users'][index]);
+                            state.setCurrentKhataUser(user);
                             Navigator.pushNamed(context, '/user-khata');
                           },
                           child: Text(
-                            state.user?['users']?[index]?['fullName'] ??
-                                'No name',
+                            user?['fullName'] ?? 'No name',
                             textAlign: TextAlign.start,
                             textWidthBasis: TextWidthBasis.parent,
                           ),
                         ),
-                        trailing: Text(state
-                            .getTotalAmmountOfUser(
-                                state.user?['users']?[index]?['email'])
-                            .toString()),
+                        trailing: Text(
+                          userAmount.abs().toString(),
+                          style: TextStyle(
+                              color: userAmount < 0
+                                  ? Colors.green[800]
+                                  : Colors.red[800]),
+                        ),
                       );
                     },
                   ),
