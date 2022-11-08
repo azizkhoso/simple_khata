@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -9,11 +11,13 @@ import 'package:simple_khata/register_page.dart';
 import 'package:simple_khata/user_khata_page.dart';
 import 'package:simple_khata/home_page.dart';
 
+import 'package:simple_khata/Record.dart';
+
 class GlobalState extends ChangeNotifier {
   String? _uid;
   Map<String, dynamic>? _user;
   Map<String, dynamic>? _currentKhataUser;
-  List<Map<String, dynamic>> _records = [];
+  List<Record> _recs = [];
 
   get user => _user;
 
@@ -21,7 +25,7 @@ class GlobalState extends ChangeNotifier {
 
   get currentKhataUser => _currentKhataUser;
 
-  get records => _records;
+  get records => _recs;
 
   void login(Map<String, dynamic> usr, String uid) {
     _user = usr;
@@ -33,7 +37,7 @@ class GlobalState extends ChangeNotifier {
   void logout() {
     _user = null;
     _uid = null;
-    _records = [];
+    _recs = [];
     notifyListeners();
   }
 
@@ -42,89 +46,82 @@ class GlobalState extends ChangeNotifier {
     notifyListeners();
   }
 
-  fetchRecords() {
+  Future<void> fetchRecords() async {
+    Completer<void> result = Completer();
     final firestore = FirebaseFirestore.instance;
-    List<Map<String, dynamic>> records = [];
+    List<Record> records = [];
     firestore
         .collection('records')
         .where('users', arrayContains: user['email'])
         .orderBy('date')
+        .withConverter(fromFirestore: (snapshot, options) => Record.fromMap(snapshot.data()!), toFirestore: (Record record, _) => record.toMap())
         .get()
         .then((qs) {
       for (var element in qs.docs) {
-        records.add(element.data());
+        // emails of all users that are added by logged in user
+        final emails = user['users'].map((u) => u['email'].toString());
+        // the current record element has one of users in user.users
+        // add it to records list
+        final rec = element.data();
+        if (emails.contains(rec.users[0]) || emails.contains(rec.users[1])) {
+          records.add(rec);
+        }
       }
-      _records = records;
+      _recs = records;
       notifyListeners();
+      result.complete();
     });
   }
 
-  lendSumToUser(
-      {required String email,
-      required int amount,
-      required String description}) {
+  Future<void> lendSumToUser({required String email, required int amount, required String description}) async {
+    // following line is used to indicate beginning of some async action
+    Completer<void> result = Completer<void>();
     final firestore = FirebaseFirestore.instance;
     firestore.collection('records').add({
       "users": [user?['email'], email],
       "amounts": [amount, -1 * amount],
       "description": description,
       "date": Timestamp.now(),
-    }).then((value) => {fetchRecords()});
+    }).then((value) {
+      fetchRecords();
+      // following line tells that record is added, async action is completed
+      result.complete();
+    });
   }
 
-  borrowFromUser(
-      {required String email,
-      required int amount,
-      required String description}) {
+  Future<void> borrowFromUser({required String email, required int amount, required String description}) async {
+    // following line is used to indicate beginning of some async action
+    Completer<void> result = Completer<void>();
     final firestore = FirebaseFirestore.instance;
     firestore.collection('records').add({
       "users": [user?['email'], email],
       "amounts": [-1 * amount, amount],
       "description": description,
       "date": Timestamp.now(),
-    }).then((value) => {fetchRecords()});
+    }).then((value) {
+      fetchRecords();
+      // following line tells that record is added, async action is completed
+      result.complete();
+    });
   }
 
   List<Map<String, dynamic>> getRecordsOfUser(String email) {
+    List recs = Record.getRecordsOfUser(email, _recs);
     final List<Map<String, dynamic>> records = [];
-    try {
-      int prevAmount = 0;
-      int index = 0;
-      for (var rec in _records) {
-        List users = rec['users'];
-        Timestamp date = rec['date'];
-        if (users.contains(email)) {
-          debugPrint('$users contain $email');
-          int indexOfEmail = users.indexOf(email);
-          int amount = rec['amounts'][indexOfEmail];
-          if (index != 0) {
-            prevAmount += amount;
-          }
-          rec['prevAmount'] = prevAmount;
-          final d = date.toDate();
-          rec['dateFormatted'] =
-              '${d.hour}:${d.minute}, ${d.day}-${d.month}-${d.year}';
-          records.add(rec);
-          index++;
-        }
-      }
-    } catch (e) {
-      debugPrint('error in getRecords of user $e');
+    int prevAmount = 0;
+    for (Record rec in recs) {
+      Map<String, dynamic> temp = rec.toMap();
+      prevAmount += rec.getAmountOfUser(email);
+      temp['prevAmount'] = prevAmount;
+      temp['dateFormatted'] = '11:39, Today';
+      records.add(temp);
     }
     return records.reversed.toList();
   }
 
   int getTotalAmmountOfUser(String email) {
     try {
-      int totalAmount = 0;
-      List<Map<String, dynamic>> records = getRecordsOfUser(email);
-      if (records.isEmpty) return 0;
-      var rec = records.last;
-      List users = rec['users'];
-      int indexOfEmail = users.indexOf(email);
-      totalAmount += int.parse(rec['prevAmount'].toString()) +
-          int.parse(rec['amounts'][indexOfEmail].toString());
-      return totalAmount;
+      return Record.getTotalAmountOfUser(email, _recs);
     } catch (e) {
       debugPrint('error in amount of user $e');
       return 0;
@@ -132,21 +129,26 @@ class GlobalState extends ChangeNotifier {
   }
 
   int getTotalLendedSum() {
-    int totalSum = 0;
     if (user == null) return 0;
-    for (var elem in user?['users']) {
-      var sum = getTotalAmmountOfUser(elem['email']);
-      totalSum += sum < 0 ? sum : 0;
+    int totalSum = 0;
+    // emails of all users that are added by logged in user
+    final emails = user['users'].map((u) => u['email'].toString());
+    for (String e in emails) {
+      int amount = Record.getTotalAmountOfUser(e, _recs);
+      if (amount < 0) totalSum += amount;
     }
     return totalSum;
   }
 
   int getTotalBorrowedSum() {
-    int totalSum = 0;
     if (user == null) return 0;
-    for (var elem in user?['users']) {
-      var sum = getTotalAmmountOfUser(elem['email']);
-      totalSum += sum > 0 ? sum : 0;
+    // return Record.getTotalBorrowedSumByUser(user['email'], _recs);
+    int totalSum = 0;
+    // emails of all users that are added by logged in user
+    final emails = user['users'].map((u) => u['email'].toString());
+    for (String e in emails) {
+      int amount = Record.getTotalAmountOfUser(e, _recs);
+      if (amount > 0) totalSum += amount;
     }
     return totalSum;
   }
@@ -179,9 +181,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => const MyHomePage(title: 'Simple Khata'),
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
-        '/user-khata': (context) => UserKhata(
-            user: state.currentKhataUser ??
-                {"fullName": "No name", "email": "noemail@abc.xyz"}),
+        '/user-khata': (context) => UserKhata(user: state.currentKhataUser ?? {"fullName": "No name", "email": "noemail@abc.xyz"}),
       },
     );
   }

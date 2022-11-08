@@ -15,8 +15,7 @@ class MyHomePage extends StatefulWidget {
 class SumContainer extends StatelessWidget {
   final String type;
   final int totalSum;
-  const SumContainer({Key? key, required this.type, required this.totalSum})
-      : super(key: key);
+  const SumContainer({Key? key, required this.type, required this.totalSum}) : super(key: key);
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -30,13 +29,10 @@ class SumContainer extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              type == 'lended'
-                  ? Icons.arrow_upward_rounded
-                  : Icons.arrow_downward_rounded,
+              type == 'lended' ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
               color: type == 'lended' ? Colors.green[800] : Colors.red[800],
             ),
-            Column(mainAxisAlignment: MainAxisAlignment.center, children: <
-                Widget>[
+            Column(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
               Text(
                 'Rs $totalSum',
                 style: TextStyle(
@@ -94,18 +90,14 @@ class _MyHomePageState extends State<MyHomePage> {
                           totalSum: totalLendedSum.abs(),
                         )),
                     const SizedBox(width: 8),
-                    Expanded(
-                        flex: 1,
-                        child: SumContainer(
-                            type: 'borrowed', totalSum: totalBorrowedSum.abs()))
+                    Expanded(flex: 1, child: SumContainer(type: 'borrowed', totalSum: totalBorrowedSum.abs()))
                   ],
                 ),
                 const SizedBox(height: 16),
                 const TextField(
                   decoration: InputDecoration(
                     prefixIcon: Icon(Icons.search),
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(8))),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
                     label: Text('Search users'),
                   ),
                 ),
@@ -115,8 +107,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     itemCount: state.user?['users'].length ?? 0,
                     itemBuilder: (context, index) {
                       final user = state.user?['users'][index];
-                      final int userAmount =
-                          state.getTotalAmmountOfUser(user?['email']);
+                      final int userAmount = state.getTotalAmmountOfUser(user?['email']);
                       return ListTile(
                         leading: const Icon(Icons.person),
                         title: TextButton(
@@ -132,10 +123,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                         trailing: Text(
                           userAmount.abs().toString(),
-                          style: TextStyle(
-                              color: userAmount < 0
-                                  ? Colors.green[800]
-                                  : Colors.red[800]),
+                          style: TextStyle(color: userAmount < 0 ? Colors.green[800] : Colors.red[800]),
                         ),
                       );
                     },
@@ -148,8 +136,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          showDialog(
-                  context: context, builder: (context) => const AddUserDialog())
+          showDialog(context: context, builder: (context) => const AddUserDialog())
               // data is refetched on rebuilding of widget
               .then((value) => setState(() => {}));
         },

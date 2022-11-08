@@ -17,7 +17,9 @@ class _UserKhataState extends State<UserKhata> {
   final amountController = TextEditingController();
   final descriptionController = TextEditingController();
 
-  openDialog(BuildContext context, String type, var action) async {
+  bool isLoading = false;
+
+  openDialog(BuildContext context, String type, Function action) async {
     showDialog(
         barrierDismissible: false,
         context: context,
@@ -35,40 +37,27 @@ class _UserKhataState extends State<UserKhata> {
                     TextField(
                       controller: amountController,
                       keyboardType: TextInputType.number,
-                      inputFormatters: <TextInputFormatter>[
-                        FilteringTextInputFormatter.digitsOnly
-                      ],
-                      decoration: const InputDecoration(
-                          label: Text('Amount'),
-                          prefixIcon: Icon(Icons.money_rounded),
-                          border: OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(8)))),
+                      inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+                      decoration: const InputDecoration(label: Text('Amount'), prefixIcon: Icon(Icons.money_rounded), border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(8)))),
                     ),
                     const SizedBox(height: 8),
                     TextField(
                       controller: descriptionController,
                       minLines: 3,
                       maxLines: 5,
-                      decoration: const InputDecoration(
-                          label: Text('Description'),
-                          border: OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(8)))),
+                      decoration: const InputDecoration(label: Text('Description'), border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(8)))),
                     ),
                     const SizedBox(height: 8),
                     Row(children: [
                       Expanded(
                           child: TextButton(
-                        onPressed: () {
-                          amountController.clear();
-                          descriptionController.clear();
-                          Navigator.of(context).pop();
-                          action(
-                              widget.user['email'],
-                              int.parse(amountController.text),
-                              descriptionController.text);
-                        },
+                        onPressed: isLoading
+                            ? null
+                            : () {
+                                amountController.clear();
+                                descriptionController.clear();
+                                Navigator.of(context).pop();
+                              },
                         child: const Text(
                           'Cancel',
                           style: TextStyle(
@@ -79,15 +68,17 @@ class _UserKhataState extends State<UserKhata> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {
-                            action(
-                                widget.user['email'],
-                                int.parse(amountController.text),
-                                descriptionController.text);
-                            amountController.clear();
-                            descriptionController.clear();
-                            Navigator.of(context).pop();
-                          },
+                          onPressed: isLoading
+                              ? null
+                              : () {
+                                  setState(() {
+                                    isLoading = true;
+                                  });
+                                  action(widget.user['email'], int.parse(amountController.text), descriptionController.text);
+                                  amountController.clear();
+                                  descriptionController.clear();
+                                  Navigator.of(context).pop();
+                                },
                           child: const Text('Done'),
                         ),
                       )
@@ -117,11 +108,7 @@ class _UserKhataState extends State<UserKhata> {
                 Container(
                   height: 100,
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                      color: isLending(totalSum)
-                          ? Colors.green[100]
-                          : Colors.red[100],
-                      borderRadius: BorderRadius.circular(16)),
+                  decoration: BoxDecoration(color: isLending(totalSum) ? Colors.green[100] : Colors.red[100], borderRadius: BorderRadius.circular(16)),
                   child: Row(
                     children: [
                       Expanded(
@@ -132,9 +119,7 @@ class _UserKhataState extends State<UserKhata> {
                               'Rs ${totalSum.abs()}',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: isLending(totalSum)
-                                    ? Colors.green[800]
-                                    : Colors.red[800],
+                                color: isLending(totalSum) ? Colors.green[800] : Colors.red[800],
                                 fontSize: 18,
                               ),
                             ),
@@ -142,9 +127,7 @@ class _UserKhataState extends State<UserKhata> {
                               isLending(totalSum) ? 'Lended' : 'Borrowed',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: isLending(totalSum)
-                                    ? Colors.green[800]
-                                    : Colors.red[800],
+                                color: isLending(totalSum) ? Colors.green[800] : Colors.red[800],
                                 fontSize: 18,
                               ),
                             )
@@ -157,27 +140,20 @@ class _UserKhataState extends State<UserKhata> {
                 const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(12.0),
-                  decoration: const BoxDecoration(
-                      border: Border(bottom: BorderSide(width: 0.5))),
+                  decoration: const BoxDecoration(border: Border(bottom: BorderSide(width: 0.5))),
                   child: Row(
                     children: const [
                       Expanded(
                         flex: 2,
-                        child: Text('Date',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
+                        child: Text('Date', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       ),
                       Expanded(
                         flex: 1,
-                        child: Text('Lended',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
+                        child: Text('Lended', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       ),
                       Expanded(
                         flex: 1,
-                        child: Text('Borrowed',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
+                        child: Text('Borrowed', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       )
                     ],
                   ),
@@ -187,15 +163,12 @@ class _UserKhataState extends State<UserKhata> {
                     itemCount: currentUserRecs.length,
                     itemBuilder: (context, index) {
                       final currentRec = currentUserRecs[index];
-                      final currentUserEmailIndex =
-                          currentRec['users'].indexOf(widget.user['email']);
-                      final currentUserAmount =
-                          currentRec['amounts'][currentUserEmailIndex];
+                      final currentUserEmailIndex = currentRec['users'].indexOf(widget.user['email']);
+                      final currentUserAmount = currentRec['amounts'][currentUserEmailIndex];
                       return Expanded(
                         child: Container(
                           padding: const EdgeInsets.all(6.0),
-                          decoration: const BoxDecoration(
-                              border: Border(bottom: BorderSide(width: 0.5))),
+                          decoration: const BoxDecoration(border: Border(bottom: BorderSide(width: 0.5))),
                           child: Row(
                             children: [
                               Expanded(
@@ -203,34 +176,22 @@ class _UserKhataState extends State<UserKhata> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(currentUserRecs[index]['dateFormatted']
-                                        .toString()),
+                                    Text(currentUserRecs[index]['dateFormatted'].toString()),
                                     Text(currentRec['description']),
                                     Text(
-                                      currentUserRecs[index]['prevAmount']
-                                          .abs()
-                                          .toString(),
-                                      style: TextStyle(
-                                          backgroundColor: isLending(
-                                                  currentUserRecs[index]
-                                                      ['prevAmount'])
-                                              ? Colors.green[200]
-                                              : Colors.red[200]),
+                                      currentUserRecs[index]['prevAmount'].abs().toString(),
+                                      style: TextStyle(backgroundColor: isLending(currentUserRecs[index]['prevAmount']) ? Colors.green[200] : Colors.red[200]),
                                     )
                                   ],
                                 ),
                               ),
                               Expanded(
                                 flex: 1,
-                                child: Text(isLending(currentUserAmount)
-                                    ? currentUserAmount.abs().toString()
-                                    : ''),
+                                child: Text(isLending(currentUserAmount) ? currentUserAmount.abs().toString() : ''),
                               ),
                               Expanded(
                                 flex: 1,
-                                child: Text(!isLending(currentUserAmount)
-                                    ? currentUserAmount.abs().toString()
-                                    : ''),
+                                child: Text(!isLending(currentUserAmount) ? currentUserAmount.abs().toString() : ''),
                               )
                             ],
                           ),
@@ -243,65 +204,58 @@ class _UserKhataState extends State<UserKhata> {
                 Row(
                   children: [
                     Expanded(
-                        child: ElevatedButton(
-                      onPressed: () => openDialog(context, 'Lending',
-                          (email, amount, description) {
-                        debugPrint('Amount is ${amount.runtimeType}');
-                        state.lendSumToUser(
-                            email: email,
-                            amount: amount,
-                            description: description);
-                      }),
-                      style: ButtonStyle(
-                        backgroundColor:
-                            MaterialStateProperty.all(Colors.green[100]),
-                        overlayColor:
-                            MaterialStateProperty.all(Colors.green[200]),
-                        foregroundColor:
-                            MaterialStateProperty.all(Colors.green[800]),
-                        elevation: MaterialStateProperty.all(0),
-                        padding:
-                            MaterialStateProperty.all(const EdgeInsets.all(16)),
-                      ),
-                      child: Text(
-                        'Lend',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green[800],
-                          fontSize: 16,
+                      child: ElevatedButton(
+                        onPressed: () => openDialog(context, 'Lending', (email, amount, description) {
+                          state.lendSumToUser(email: email, amount: amount, description: description).then((value) {
+                            setState(() {
+                              isLoading = false;
+                            });
+                          });
+                        }),
+                        style: ButtonStyle(
+                          backgroundColor: MaterialStateProperty.all(Colors.green[100]),
+                          overlayColor: MaterialStateProperty.all(Colors.green[200]),
+                          foregroundColor: MaterialStateProperty.all(Colors.green[800]),
+                          elevation: MaterialStateProperty.all(0),
+                          padding: MaterialStateProperty.all(const EdgeInsets.all(16)),
+                        ),
+                        child: Text(
+                          'Lend',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green[800],
+                            fontSize: 16,
+                          ),
                         ),
                       ),
-                    )),
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
-                        child: ElevatedButton(
-                      onPressed: () => openDialog(
-                          context,
-                          'Borrowing',
-                          (email, amount, description) => state.borrowFromUser(
-                              email: email,
-                              amount: amount,
-                              description: description)),
-                      style: ButtonStyle(
-                        backgroundColor:
-                            MaterialStateProperty.all(Colors.red[100]),
-                        overlayColor:
-                            MaterialStateProperty.all(Colors.red[200]),
-                        foregroundColor:
-                            MaterialStateProperty.all(Colors.red[800]),
-                        elevation: MaterialStateProperty.all(0),
-                        padding:
-                            MaterialStateProperty.all(const EdgeInsets.all(16)),
-                      ),
-                      child: Text(
-                        'Borrow',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red[800],
-                          fontSize: 16,
+                      child: ElevatedButton(
+                        onPressed: () => openDialog(context, 'Borrowing', (email, amount, description) {
+                          state.borrowFromUser(email: email, amount: amount, description: description).then((value) {
+                            setState(() {
+                              isLoading = false;
+                            });
+                          });
+                        }),
+                        style: ButtonStyle(
+                          backgroundColor: MaterialStateProperty.all(Colors.red[100]),
+                          overlayColor: MaterialStateProperty.all(Colors.red[200]),
+                          foregroundColor: MaterialStateProperty.all(Colors.red[800]),
+                          elevation: MaterialStateProperty.all(0),
+                          padding: MaterialStateProperty.all(const EdgeInsets.all(16)),
+                        ),
+                        child: Text(
+                          'Borrow',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red[800],
+                            fontSize: 16,
+                          ),
                         ),
                       ),
-                    ))
+                    ),
                   ],
                 )
               ],
