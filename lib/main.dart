@@ -113,7 +113,8 @@ class GlobalState extends ChangeNotifier {
       Map<String, dynamic> temp = rec.toMap();
       prevAmount += rec.getAmountOfUser(email);
       temp['prevAmount'] = prevAmount;
-      temp['dateFormatted'] = '11:39, Today';
+      final d = rec.date.toDate();
+      temp['dateFormatted'] = '${d.hour}:${d.minute}, ${d.day}-${d.month}-${d.year}';
       records.add(temp);
     }
     return records.reversed.toList();
@@ -155,6 +156,7 @@ class GlobalState extends ChangeNotifier {
 }
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -176,7 +178,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      initialRoute: '/',
+      initialRoute: '/login',
       routes: {
         '/': (context) => const MyHomePage(title: 'Simple Khata'),
         '/login': (context) => const LoginPage(),

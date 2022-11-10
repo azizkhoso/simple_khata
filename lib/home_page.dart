@@ -57,6 +57,7 @@ class SumContainer extends StatelessWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final searchController = TextEditingController();
   @override
   Widget build(BuildContext context) {
     final state = Provider.of<GlobalState>(context);
@@ -94,12 +95,16 @@ class _MyHomePageState extends State<MyHomePage> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                const TextField(
-                  decoration: InputDecoration(
+                TextField(
+                  controller: searchController,
+                  decoration: const InputDecoration(
                     prefixIcon: Icon(Icons.search),
                     border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
                     label: Text('Search users'),
                   ),
+                  onChanged: (val) {
+                    setState(() {});
+                  },
                 ),
                 const SizedBox(height: 16),
                 Expanded(
@@ -108,6 +113,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     itemBuilder: (context, index) {
                       final user = state.user?['users'][index];
                       final int userAmount = state.getTotalAmmountOfUser(user?['email']);
+                      if (!user?['fullName'].toLowerCase().contains(searchController.text.toLowerCase()) && searchController.text.compareTo('') != 0) {
+                        return const Text('');
+                      }
                       return ListTile(
                         leading: const Icon(Icons.person),
                         title: TextButton(

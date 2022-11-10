@@ -26,138 +26,126 @@ class LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final state = Provider.of<GlobalState>(context);
     return Scaffold(
-      body: Center(
-        child: Container(
-          constraints: const BoxConstraints.expand(width: 400),
-          padding: const EdgeInsets.all(8.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 150,
-                  height: 150,
-                  decoration: BoxDecoration(
-                    color: Colors.blue,
-                    borderRadius: BorderRadius.circular(99999),
+      body: Container(
+        constraints: const BoxConstraints.expand(width: 400),
+        padding: const EdgeInsets.all(8.0),
+        child: Expanded(
+          child: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 150,
+                    height: 150,
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: BorderRadius.circular(99999),
+                    ),
+                    child: const Icon(
+                      Icons.person,
+                      color: Colors.white,
+                      size: 90,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.person,
-                    color: Colors.white,
-                    size: 90,
+                  const SizedBox(height: 16),
+                  Text(
+                    'Welcome back to',
+                    style: Theme.of(context).textTheme.headline6,
                   ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Welcome back to',
-                  style: Theme.of(context).textTheme.headline6,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Simple Khata',
-                  style: Theme.of(context).textTheme.headline3,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: emailController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email),
-                    label: Text('Email'),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Simple Khata',
+                    style: Theme.of(context).textTheme.headline3,
                   ),
-                  validator: (value) {
-                    if (value!.isEmpty) return 'Email can not be empty';
-                    if (value.length < 3) {
-                      return 'Email should contain at least 3 characters';
-                    }
-                    if (!value.contains('@')) return 'Invalid email';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  obscureText: true,
-                  controller: passwordController,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.key),
-                    label: Text('Password'),
-                  ),
-                  validator: (value) {
-                    if (value!.length < 8) {
-                      return 'Password should contain at least 8 characters';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                    onPressed: isLoading
-                        ? null
-                        : () async {
-                            if (_formKey.currentState?.validate() ?? false) {
-                              setState(() {
-                                isLoading = true;
-                              });
-                              _auth
-                                  .signInWithEmailAndPassword(
-                                      email: emailController.text,
-                                      password: passwordController.text)
-                                  .then((value) {
-                                final foundUser = _firestore
-                                    .collection('users')
-                                    .doc(value.user?.uid);
-                                foundUser.get().then((usr) {
-                                  if (!usr.exists) {
-                                    setState(() {
-                                      isLoading = false;
-                                    });
-                                    addToast(
-                                        context: context,
-                                        message: 'User not found',
-                                        type: 'error');
-                                  }
-                                  state.login(usr.data()!, usr.id);
-                                  Navigator.of(context)
-                                      .pushReplacementNamed('/');
-                                });
-                              }).catchError((err) {
-                                addToast(
-                                    context: context,
-                                    message:
-                                        err?.message?.toString() ?? 'Error',
-                                    type: 'error');
-                                setState(() {
-                                  isLoading = false;
-                                });
-                              });
-                            }
-                          },
-                    child: const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: Text(
-                        'Login',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    )),
-                const SizedBox(height: 16),
-                TextButton(
-                    onPressed: () {
-                      Navigator.pushReplacementNamed(context, '/register');
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: emailController,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.email),
+                      label: Text('Email'),
+                    ),
+                    validator: (value) {
+                      if (value!.isEmpty) return 'Email can not be empty';
+                      if (value.length < 3) {
+                        return 'Email should contain at least 3 characters';
+                      }
+                      if (!value.contains('@')) return 'Invalid email';
+                      return null;
                     },
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        "Don't have an account? Register",
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ))
-              ],
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    obscureText: true,
+                    controller: passwordController,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.key),
+                      label: Text('Password'),
+                    ),
+                    validator: (value) {
+                      if (value!.length < 8) {
+                        return 'Password should contain at least 8 characters';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                      onPressed: isLoading
+                          ? null
+                          : () async {
+                              if (_formKey.currentState?.validate() ?? false) {
+                                setState(() {
+                                  isLoading = true;
+                                });
+                                _auth.signInWithEmailAndPassword(email: emailController.text, password: passwordController.text).then((value) {
+                                  final foundUser = _firestore.collection('users').doc(value.user?.uid);
+                                  foundUser.get().then((usr) {
+                                    if (!usr.exists) {
+                                      setState(() {
+                                        isLoading = false;
+                                      });
+                                      addToast(context: context, message: 'User not found', type: 'error');
+                                    }
+                                    state.login(usr.data()!, usr.id);
+                                    Navigator.of(context).pushReplacementNamed('/');
+                                  });
+                                }).catchError((err) {
+                                  addToast(context: context, message: err?.message?.toString() ?? 'Error', type: 'error');
+                                  setState(() {
+                                    isLoading = false;
+                                  });
+                                });
+                              }
+                            },
+                      child: const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text(
+                          'Login',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      )),
+                  const SizedBox(height: 16),
+                  TextButton(
+                      onPressed: () {
+                        Navigator.pushReplacementNamed(context, '/register');
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          "Don't have an account? Register",
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ))
+                ],
+              ),
             ),
           ),
         ),
